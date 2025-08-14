@@ -154,7 +154,8 @@
 
     .guess-input,
     .make-input,
-    .model-input {
+    .model-input,
+    .year-input {
       flex: 1;
       padding: 16px 20px;
       border: 2px solid #333;
@@ -323,15 +324,24 @@
       margin-left: 10px;
     }
 
-    .score-display {
-      font-family: monospace;
-      font-size: 1.1em;
-      color: #aaa;
-      background: #222;
-      padding: 8px 12px;
-      border-radius: 6px;
+    .score-tracker {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
       margin-bottom: 16px;
-      text-align: center;
+    }
+
+    .score-box {
+      width: 30px;
+      height: 30px;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #222;
+      border-radius: 6px;
+      color: #aaa;
+      line-height: 1;
     }
 
     .past-guesses {
@@ -388,7 +398,7 @@
       <p class="sub">Guess the make and model</p>
     </header>
 
-    <div id="scoreDisplay" class="score-display"></div>
+    <div id="scoreTracker" class="score-tracker"></div>
     <div class="puzzle-container">
       <div class="image-container">
         <!-- Placeholder for the zoomed-in car image -->
@@ -408,7 +418,7 @@
           <div id="modelSuggestions" class="suggestions-list" style="display:none;"></div>
         </div>
         <div class="suggestions" id="yearInputContainer" style="display: none;">
-          <input type="number" id="yearInput" placeholder="Year (e.g., 2022)" class="year-input" autocomplete="off">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="yearInput" placeholder="Year (e.g., 2022)" class="year-input" autocomplete="off">
         </div>
         <button id="submitGuess" class="btn submit-btn">Submit</button>
       </div>

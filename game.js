@@ -4,8 +4,9 @@ let guessesRemaining = 3;
 let hasWon = false;
 let guesses = [];
 let gameMode = 'daily'; // 'daily', 'easy', 'hard'
-let score = 0;
 let puzzleNumber = 0;
+const SESSION_SIZE = 5;
+let sessionResults = [];
 
 // Game mode settings
 const GAME_MODES = {
@@ -175,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Start a new game series for a given mode
 function startGame(mode) {
     gameMode = mode;
-    score = 0;
     puzzleNumber = 0;
+    sessionResults = [];
 
     if (mode === 'daily') {
         const loadedState = loadDailyState();
@@ -195,8 +196,8 @@ function startGame(mode) {
     }
 
     // Otherwise, start a fresh game
+    renderScoreTracker();
     newGame();
-    updateScoreDisplay();
 }
 
 // Start a new puzzle
@@ -247,7 +248,6 @@ function newGame() {
 
     // Update UI
     updateGuessCounter();
-    updateScoreDisplay();
 }
 
 // Check the user's guess
@@ -276,7 +276,6 @@ function checkGuess() {
     if (isCorrect) {
         // Correct guess
         hasWon = true;
-        score++;
         showAnswer(true);
         toast('Correct! 🎉');
     } else {
@@ -296,8 +295,6 @@ function checkGuess() {
     if (gameMode === 'daily') {
         saveDailyState();
     }
-
-    // Keep what user typed; do not clear fields automatically
 }
 
 // Update the guess counter display
@@ -305,10 +302,19 @@ function updateGuessCounter() {
     guessCounter.textContent = `Guesses remaining: ${guessesRemaining}`;
 }
 
-function updateScoreDisplay() {
-    const scoreEl = document.getElementById('scoreDisplay');
-    if (scoreEl) {
-        scoreEl.textContent = `Mode: ${gameMode.toUpperCase()} | Puzzle: ${puzzleNumber} | Score: ${score}`;
+function renderScoreTracker() {
+    const tracker = document.getElementById('scoreTracker');
+    if (!tracker) return;
+    tracker.innerHTML = '';
+    for (let i = 0; i < SESSION_SIZE; i++) {
+        const box = document.createElement('div');
+        box.className = 'score-box';
+        if (i < sessionResults.length) {
+            box.textContent = sessionResults[i] ? '✅' : '❌';
+        } else {
+            box.textContent = '⬛';
+        }
+        tracker.appendChild(box);
     }
 }
 
@@ -325,11 +331,16 @@ function showAnswer(isCorrect) {
   `;
     fullImageDisplay.style.display = 'block';
 
+    sessionResults.push(isCorrect);
+    renderScoreTracker();
+
+    const isSessionOver = puzzleNumber >= SESSION_SIZE && gameMode !== 'daily';
+
     // Show answer
     answerDisplay.innerHTML = `
     <h3>${isCorrect ? 'Correct!' : 'The answer was:'}</h3>
     <p>${currentPuzzle.make.toUpperCase()} ${currentPuzzle.model.toUpperCase()} (${currentPuzzle.year})</p>
-    <button id="playAgain" class="btn">Play Again</button>
+    <button id="playAgain" class="btn">${isSessionOver ? 'New Session' : 'Play Again'}</button>
   `;
     answerDisplay.style.display = 'block';
 
@@ -338,8 +349,13 @@ function showAnswer(isCorrect) {
         if (gameMode === 'daily') {
             toast('Daily puzzle is once a day. Play another mode!');
             document.getElementById('playAgain').disabled = true;
+            return;
+        }
+
+        if (puzzleNumber >= SESSION_SIZE) {
+            startGame(gameMode); // Start a new session
         } else {
-            newGame();
+            newGame(); // Start next puzzle in the session
         }
     });
 }
@@ -390,7 +406,7 @@ function loadDailyState() {
 
 function restoreUI() {
     updateGuessCounter();
-    updateScoreDisplay();
+    renderScoreTracker();
 
     // Display past guesses
     const pastGuessesEl = document.getElementById('pastGuesses');
