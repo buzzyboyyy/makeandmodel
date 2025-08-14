@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>makeandmodel.xyz — Game Modes</title>
-  <meta name="description" content="Simple, minimal landing with Daily, Easy, and Hard buttons." />
+  <title>makeandmodel.xyz — Daily Puzzle</title>
+  <meta name="description" content="Daily car make and model guessing game. Can you identify the car from a zoomed-in image?" />
   <style>
     :root {
       --bg: #000;
@@ -30,10 +30,10 @@
     /* Layout */
     .wrap {
       min-height: 100dvh;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-items: center;
+      justify-content: space-between;
       padding: 32px 20px;
       gap: 24px;
     }
@@ -82,6 +82,127 @@
     .btn:hover { transform: translateY(-1px); box-shadow: 0 0 0 6px rgba(255,255,255,0.04), 0 8px 20px rgba(0,0,0,0.6); }
     .btn:active { transform: translateY(0); }
     .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--ring); }
+    
+    /* Puzzle container styles */
+    .puzzle-container {
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .image-container {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #111;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      border: 2px solid #222;
+    }
+    
+    .car-image {
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #000;
+    }
+    
+    .guess-container {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    .guess-input {
+      flex: 1;
+      padding: 16px 20px;
+      border: 2px solid #333;
+      border-radius: 12px;
+      background: #111;
+      color: var(--fg);
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    
+    .guess-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    .submit-btn {
+      min-width: 120px;
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+      border: none;
+    }
+    
+    .mode-buttons {
+      display: flex;
+      gap: 16px;
+      margin-top: 20px;
+    }
+    
+    .mode-btn {
+      min-width: 140px;
+      text-align: center;
+    }
+    
+    .guess-counter {
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    
+    .answer-display {
+      margin-top: 24px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      text-align: center;
+    }
+    
+    .answer-display h3 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+    }
+    
+    .answer-display p {
+      margin: 0 0 16px 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    
+    .full-image-display {
+      margin: 24px 0;
+      text-align: center;
+    }
+    
+    .full-image-display h3 {
+      margin: 0 0 12px 0;
+      font-size: 18px;
+    }
+    
+    .full-image-display img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 12px;
+      border: 2px solid #333;
+    }
+    
+    #playAgain {
+      margin-top: 12px;
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+      border: none;
+    }
 
     .pill { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #111; background: var(--fg); padding: 4px 8px; border-radius: 999px; margin-left: 10px; }
 
@@ -99,34 +220,178 @@
   </style>
 </head>
 <body>
-  <div class="brand">MAKE &amp; MODEL</div>
+  <div class="brand">DAILY PUZZLE</div>
   <main class="wrap">
     <header>
-      <h1>makeandmodel</h1>
-      <p class="sub">Pick a mode to start playing.</p>
+      <h1>What's this car?</h1>
+      <p class="sub">Guess the make and model</p>
     </header>
 
-    <section class="btns" aria-label="Game mode selection">
-      <!-- Update the hrefs below to point to your routes/pages (e.g., /daily, /easy, /hard) -->
-      <a class="btn" id="daily" href="#daily">Daily</a>
-      <a class="btn" id="easy" href="#easy">Easy</a>
-      <a class="btn" id="hard" href="#hard">Hard</a>
-    </section>
+    <div class="puzzle-container">
+      <div class="image-container">
+        <!-- Placeholder for the zoomed-in car image -->
+        <div class="car-image" id="carImage">
+          <!-- Image will be set via JavaScript -->
+        </div>
+      </div>
+      
+      <div class="guess-container">
+        <input type="text" id="guessInput" placeholder="Enter make and model..." class="guess-input" autocomplete="off">
+        <button id="submitGuess" class="btn submit-btn">Submit</button>
+      </div>
+    </div>
+
+    <div class="mode-buttons">
+      <a href="#easy" class="btn mode-btn" id="easy">Easy Mode</a>
+      <a href="#hard" class="btn mode-btn" id="hard">Hard Mode</a>
+    </div>
 
     <footer>
-      <div>© <span id="year"></span> makeandmodel.xyz · <a href="https://github.com/buzzyboyyy" target="_blank" rel="noopener">GitHub</a></div>
+      <div>  <span id="year"></span> makeandmodel.xyz · <a href="https://github.com/buzzyboyyy" target="_blank" rel="noopener">GitHub</a></div>
     </footer>
   </main>
 
   <script>
-    // Replace the demo anchors with real paths or logic as you build.
-    // For now, clicking shows a quick toast-like hint.
-    const routes = {
-      daily: "/daily",   // change to your real path or page
-      easy:  "/easy",
-      hard:  "/hard"
-    };
+    // Game state
+    let currentPuzzle = null;
+    let guessesRemaining = 3;
+    let hasWon = false;
 
+    // DOM elements
+    let carImage, guessInput, submitButton, guessCounter, answerDisplay, fullImageDisplay;
+
+    // Available car images with their data
+    const carImages = [
+      { filename: 'ford_mustang_gt_2022.jpg', make: 'Ford', model: 'Mustang GT', year: '2022' },
+      { filename: 'toyota_rav4_2018.jpg', make: 'Toyota', model: 'RAV4', year: '2018' },
+      { filename: 'volkswagen_golfr_2019.jpg', make: 'Volkswagen', model: 'Golf R', year: '2019' }
+    ];
+
+    // Initialize the game
+    document.addEventListener('DOMContentLoaded', () => {
+      // Get DOM elements
+      carImage = document.getElementById('carImage');
+      guessInput = document.getElementById('guessInput');
+      submitButton = document.getElementById('submitGuess');
+      
+      // Create guess counter
+      const puzzleContainer = document.querySelector('.puzzle-container');
+      guessCounter = document.createElement('div');
+      guessCounter.className = 'guess-counter';
+      puzzleContainer.insertBefore(guessCounter, document.querySelector('.guess-container'));
+      
+      // Create answer display (initially hidden)
+      answerDisplay = document.createElement('div');
+      answerDisplay.className = 'answer-display';
+      answerDisplay.style.display = 'none';
+      puzzleContainer.appendChild(answerDisplay);
+
+      // Create full image display (initially hidden)
+      fullImageDisplay = document.createElement('div');
+      fullImageDisplay.className = 'full-image-display';
+      fullImageDisplay.style.display = 'none';
+      puzzleContainer.insertBefore(fullImageDisplay, answerDisplay);
+
+      // Start a new game
+      newGame();
+
+      // Event listeners
+      submitButton.addEventListener('click', checkGuess);
+      guessInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkGuess();
+      });
+      
+      // Mode buttons
+      ['easy', 'hard'].forEach(id => {
+        const link = document.getElementById(id);
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          toast(`${id.charAt(0).toUpperCase() + id.slice(1)} mode coming soon`);
+        });
+      });
+    });
+
+    // Start a new game
+    function newGame() {
+      // Reset game state
+      guessesRemaining = 3;
+      hasWon = false;
+      guessInput.value = '';
+      guessInput.disabled = false;
+      submitButton.disabled = false;
+      answerDisplay.style.display = 'none';
+      fullImageDisplay.style.display = 'none';
+      
+      // Select a random car
+      currentPuzzle = carImages[Math.floor(Math.random() * carImages.length)];
+      
+      // Set the zoomed-in image
+      carImage.style.backgroundImage = `url(images/${currentPuzzle.filename})`;
+      
+      // Update UI
+      updateGuessCounter();
+    }
+
+    // Check the user's guess
+    function checkGuess() {
+      if (hasWon) return;
+      
+      const guess = guessInput.value.trim().toLowerCase();
+      if (!guess) return;
+      
+      const correctAnswer = `${currentPuzzle.make} ${currentPuzzle.model}`.toLowerCase();
+      
+      if (guess === correctAnswer) {
+        // Correct guess
+        hasWon = true;
+        showAnswer(true);
+        toast('Correct! 🎉');
+      } else {
+        // Incorrect guess
+        guessesRemaining--;
+        updateGuessCounter();
+        
+        if (guessesRemaining <= 0) {
+          // Out of guesses
+          showAnswer(false);
+          toast('Out of guesses! The answer was revealed.');
+        } else {
+          toast(`Incorrect! ${guessesRemaining} ${guessesRemaining === 1 ? 'guess' : 'guesses'} remaining.`);
+        }
+      }
+      
+      guessInput.value = '';
+    }
+    
+    // Update the guess counter display
+    function updateGuessCounter() {
+      guessCounter.textContent = `Guesses remaining: ${guessesRemaining}`;
+    }
+    
+    // Show the answer and full image
+    function showAnswer(isCorrect) {
+      guessInput.disabled = true;
+      submitButton.disabled = true;
+      
+      // Show full image
+      fullImageDisplay.innerHTML = `
+        <h3>Full Image</h3>
+        <img src="images/${currentPuzzle.filename}" alt="${currentPuzzle.make} ${currentPuzzle.model}">
+      `;
+      fullImageDisplay.style.display = 'block';
+      
+      // Show answer
+      answerDisplay.innerHTML = `
+        <h3>${isCorrect ? 'Correct!' : 'The answer was:'}</h3>
+        <p>${currentPuzzle.make.toUpperCase()} ${currentPuzzle.model.toUpperCase()} (${currentPuzzle.year})</p>
+        <button id="playAgain" class="btn">Play Again</button>
+      `;
+      answerDisplay.style.display = 'block';
+      
+      // Add event listener for play again button
+      document.getElementById('playAgain').addEventListener('click', newGame);
+    }
+    
     function toast(msg) {
       const el = document.createElement('div');
       el.textContent = msg;
@@ -134,7 +399,7 @@
       el.style.left = '50%';
       el.style.bottom = '28px';
       el.style.transform = 'translateX(-50%)';
-      el.style.padding = '12px 16px';
+      el.style.padding = '12px 24px';
       el.style.border = '2px solid #fff';
       el.style.borderRadius = '12px';
       el.style.background = 'rgba(0,0,0,0.8)';
@@ -143,21 +408,10 @@
       el.style.letterSpacing = '.06em';
       el.style.zIndex = '9999';
       el.style.boxShadow = '0 0 0 6px rgba(255,255,255,0.04)';
+      el.style.whiteSpace = 'nowrap';
       document.body.appendChild(el);
       setTimeout(() => { el.remove(); }, 1700);
     }
-
-    // Wire demo handlers — replace with real navigation if those pages exist
-    ["daily","easy","hard"].forEach(id => {
-      const link = document.getElementById(id);
-      link.addEventListener('click', (e) => {
-        const path = routes[id];
-        if (path === '#demo' || path.startsWith('#')) {
-          e.preventDefault();
-          toast(`${id.charAt(0).toUpperCase()+id.slice(1)} mode coming soon`);
-        }
-      });
-    });
 
     // Dynamic year
     document.getElementById('year').textContent = new Date().getFullYear();
