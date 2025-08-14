@@ -1,31 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>makeandmodel.xyz — Daily Puzzle</title>
-  <meta name="description" content="Daily car make and model guessing game. Can you identify the car from a zoomed-in image?" />
+  <meta name="description"
+    content="Daily car make and model guessing game. Can you identify the car from a zoomed-in image?" />
   <style>
     :root {
       --bg: #000;
       --fg: #f5f5f5;
       --muted: #b3b3b3;
       --accent: #ffffff;
-      --ring: rgba(255,255,255,0.35);
+      --ring: rgba(255, 255, 255, 0.35);
     }
-    html, body { height: 100%; }
-    * { box-sizing: border-box; }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
       color: var(--fg);
       font: 500 16px/1.5 ui-sans-serif, -apple-system, BlinkMacSystemFont,
-            Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, "Apple Color Emoji",
-            "Segoe UI Emoji";
+        Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, "Apple Color Emoji",
+        "Segoe UI Emoji";
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
-    a { color: inherit; text-decoration: none; }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
 
     /* Layout */
     .wrap {
@@ -38,13 +52,17 @@
       gap: 24px;
     }
 
-    header { text-align: center; }
+    header {
+      text-align: center;
+    }
+
     h1 {
       margin: 0 0 8px 0;
       font-size: clamp(28px, 5vw, 48px);
       font-weight: 800;
       letter-spacing: 0.02em;
     }
+
     .sub {
       margin: 0;
       color: var(--muted);
@@ -59,8 +77,11 @@
       width: min(560px, 92vw);
       margin: 8px auto 0;
     }
+
     @media (min-width: 640px) {
-      .btns { grid-template-columns: repeat(3, 1fr); }
+      .btns {
+        grid-template-columns: repeat(3, 1fr);
+      }
     }
 
     .btn {
@@ -79,10 +100,21 @@
       cursor: pointer;
       user-select: none;
     }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 0 0 6px rgba(255,255,255,0.04), 0 8px 20px rgba(0,0,0,0.6); }
-    .btn:active { transform: translateY(0); }
-    .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--ring); }
-    
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.04), 0 8px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px var(--ring);
+    }
+
     /* Puzzle container styles */
     .puzzle-container {
       width: 100%;
@@ -90,7 +122,7 @@
       text-align: center;
       margin: 20px 0;
     }
-    
+
     .image-container {
       width: 100%;
       aspect-ratio: 1;
@@ -100,7 +132,7 @@
       margin-bottom: 24px;
       border: 2px solid #222;
     }
-    
+
     .car-image {
       width: 100%;
       height: 100%;
@@ -109,7 +141,7 @@
       background-repeat: no-repeat;
       background-color: #000;
     }
-    
+
     .guess-container {
       display: grid;
       grid-template-columns: 1fr 1fr auto;
@@ -119,8 +151,10 @@
       margin: 0 auto;
       align-items: start;
     }
-    
-    .guess-input, .make-input, .model-input {
+
+    .guess-input,
+    .make-input,
+    .model-input {
       flex: 1;
       padding: 16px 20px;
       border: 2px solid #333;
@@ -130,8 +164,10 @@
       font-size: 16px;
       transition: border-color 0.2s;
     }
-    
-    .guess-input:focus, .make-input:focus, .model-input:focus {
+
+    .guess-input:focus,
+    .make-input:focus,
+    .model-input:focus {
       outline: none;
       border-color: var(--accent);
     }
@@ -139,6 +175,7 @@
     .suggestions {
       position: relative;
     }
+
     .suggestions-list {
       position: absolute;
       top: 100%;
@@ -151,16 +188,18 @@
       max-height: 220px;
       overflow-y: auto;
       z-index: 20;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     }
+
     .suggestions-item {
       padding: 10px 14px;
       cursor: pointer;
     }
+
     .suggestions-item:hover {
-      background: rgba(255,255,255,0.06);
+      background: rgba(255, 255, 255, 0.06);
     }
-    
+
     .submit-btn {
       min-width: 120px;
       background: var(--accent);
@@ -168,24 +207,24 @@
       font-weight: 700;
       border: none;
     }
-    
+
     .mode-buttons {
       display: flex;
       gap: 16px;
       margin-top: 20px;
     }
-    
+
     .mode-btn {
       min-width: 140px;
       text-align: center;
     }
-    
+
     .guess-counter {
       color: var(--muted);
       margin-bottom: 16px;
       font-size: 14px;
     }
-    
+
     .answer-display {
       margin-top: 24px;
       padding: 16px;
@@ -193,36 +232,36 @@
       border-radius: 12px;
       text-align: center;
     }
-    
+
     .answer-display h3 {
       margin: 0 0 8px 0;
       font-size: 20px;
     }
-    
+
     .answer-display p {
       margin: 0 0 16px 0;
       font-size: 24px;
       font-weight: 700;
       color: var(--accent);
     }
-    
+
     .full-image-display {
       margin: 24px 0;
       text-align: center;
     }
-    
+
     .full-image-display h3 {
       margin: 0 0 12px 0;
       font-size: 18px;
     }
-    
+
     .full-image-display img {
       max-width: 100%;
       max-height: 300px;
       border-radius: 12px;
       border: 2px solid #333;
     }
-    
+
     #playAgain {
       margin-top: 12px;
       background: var(--accent);
@@ -231,21 +270,40 @@
       border: none;
     }
 
-    .pill { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #111; background: var(--fg); padding: 4px 8px; border-radius: 999px; margin-left: 10px; }
+    .pill {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #111;
+      background: var(--fg);
+      padding: 4px 8px;
+      border-radius: 999px;
+      margin-left: 10px;
+    }
 
-    footer { opacity: .7; font-size: 13px; text-align: center; }
-    footer a { text-decoration: underline; text-underline-offset: 2px; }
+    footer {
+      opacity: .7;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    footer a {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
 
     /* Subtle top-left logo spot (optional) */
     .brand {
       position: fixed;
-      top: 16px; left: 18px;
+      top: 16px;
+      left: 18px;
       font-size: 14px;
       letter-spacing: .08em;
       opacity: .8;
     }
   </style>
 </head>
+
 <body>
   <div class="brand">DAILY PUZZLE</div>
   <main class="wrap">
@@ -261,7 +319,7 @@
           <!-- Image will be set via JavaScript -->
         </div>
       </div>
-      
+
       <div class="guess-container">
         <div class="suggestions">
           <input type="text" id="makeInput" placeholder="Make (e.g., Ford)" class="make-input" autocomplete="off">
@@ -281,7 +339,8 @@
     </div>
 
     <footer>
-      <div>  <span id="year"></span> makeandmodel.xyz · <a href="https://github.com/buzzyboyyy" target="_blank" rel="noopener">GitHub</a></div>
+      <div> <span id="year"></span> makeandmodel.xyz · <a href="https://github.com/buzzyboyyy" target="_blank"
+          rel="noopener">GitHub</a></div>
     </footer>
   </main>
 
@@ -292,7 +351,7 @@
     let hasWon = false;
 
     // Clue display settings
-    const CLUE_ZOOM_PERCENT = 200; // ~sqrt(2)*100 -> roughly 50% of area visible
+    const CLUE_ZOOM_PERCENT = 333; // ~sqrt(2)*100 -> roughly 50% of area visible
     const CLUE_POS_JITTER = 10;    // percent jitter around center (50% ± 10%)
 
     // DOM elements
@@ -312,7 +371,9 @@
     // Lightweight fuzzy match: prioritize startsWith, then includes
     function fuzzyOptions(input, list, limit = 8) {
       const q = input.trim().toLowerCase();
-      if (!q) return list.slice(0, limit);
+      // If there's no query, return the full list so it can be scrolled
+      if (!q) return list;
+      // Otherwise, filter and apply the limit
       const starts = list.filter(x => x.toLowerCase().startsWith(q));
       const contains = list.filter(x => !x.toLowerCase().startsWith(q) && x.toLowerCase().includes(q));
       return [...starts, ...contains].slice(0, limit);
@@ -353,13 +414,13 @@
       makeInput = document.getElementById('makeInput');
       modelInput = document.getElementById('modelInput');
       submitButton = document.getElementById('submitGuess');
-      
+
       // Create guess counter
       const puzzleContainer = document.querySelector('.puzzle-container');
       guessCounter = document.createElement('div');
       guessCounter.className = 'guess-counter';
       puzzleContainer.insertBefore(guessCounter, document.querySelector('.guess-container'));
-      
+
       // Create answer display (initially hidden)
       answerDisplay = document.createElement('div');
       answerDisplay.className = 'answer-display';
@@ -429,7 +490,7 @@
         .catch(error => {
           console.error('Failed to load car catalog:', error);
           // Display an error to the user
-          document.getElementById('game-container').innerHTML = 
+          document.getElementById('game-container').innerHTML =
             '<p style="color: red; font-weight: bold;">Error: Could not load car catalog. Please ensure you are running this from a local web server, not a file:// URL.</p>';
         });
     });
@@ -446,10 +507,10 @@
       submitButton.disabled = false;
       answerDisplay.style.display = 'none';
       fullImageDisplay.style.display = 'none';
-      
+
       // Select a random car
       currentPuzzle = carImages[Math.floor(Math.random() * carImages.length)];
-      
+
       // Set the zoomed-in image
       carImage.style.backgroundImage = `url(images/${currentPuzzle.filename})`;
       // Zoom so only a smaller portion is shown during guessing
@@ -459,7 +520,7 @@
       const posX = randCentered().toFixed(1);
       const posY = randCentered().toFixed(1);
       carImage.style.backgroundPosition = `${posX}% ${posY}%`;
-      
+
       // Update UI
       updateGuessCounter();
     }
@@ -467,14 +528,14 @@
     // Check the user's guess
     function checkGuess() {
       if (hasWon) return;
-      
+
       const makeGuess = makeInput.value.trim().toLowerCase();
       const modelGuess = modelInput.value.trim().toLowerCase();
       if (!makeGuess || !modelGuess) return;
-      
+
       const correctMake = currentPuzzle.make.toLowerCase();
       const correctModel = currentPuzzle.model.toLowerCase();
-      
+
       if (makeGuess === correctMake && modelGuess === correctModel) {
         // Correct guess
         hasWon = true;
@@ -484,7 +545,7 @@
         // Incorrect guess
         guessesRemaining--;
         updateGuessCounter();
-        
+
         if (guessesRemaining <= 0) {
           // Out of guesses
           showAnswer(false);
@@ -493,28 +554,28 @@
           toast(`Incorrect! ${guessesRemaining} ${guessesRemaining === 1 ? 'guess' : 'guesses'} remaining.`);
         }
       }
-      
+
       // Keep what user typed; do not clear fields automatically
     }
-    
+
     // Update the guess counter display
     function updateGuessCounter() {
       guessCounter.textContent = `Guesses remaining: ${guessesRemaining}`;
     }
-    
+
     // Show the answer and full image
     function showAnswer(isCorrect) {
       makeInput.disabled = true;
       modelInput.disabled = true;
       submitButton.disabled = true;
-      
+
       // Show full image
       fullImageDisplay.innerHTML = `
         <h3>Full Image</h3>
         <img src="images/${currentPuzzle.filename}" alt="${currentPuzzle.make} ${currentPuzzle.model}">
       `;
       fullImageDisplay.style.display = 'block';
-      
+
       // Show answer
       answerDisplay.innerHTML = `
         <h3>${isCorrect ? 'Correct!' : 'The answer was:'}</h3>
@@ -522,11 +583,11 @@
         <button id="playAgain" class="btn">Play Again</button>
       `;
       answerDisplay.style.display = 'block';
-      
+
       // Add event listener for play again button
       document.getElementById('playAgain').addEventListener('click', newGame);
     }
-    
+
     function toast(msg) {
       const el = document.createElement('div');
       el.textContent = msg;
@@ -552,4 +613,5 @@
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
+
 </html>
