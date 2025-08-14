@@ -259,6 +259,7 @@
 
     // Clue display settings
     const CLUE_ZOOM_PERCENT = 141; // ~sqrt(2)*100 -> roughly 50% of area visible
+    const CLUE_POS_JITTER = 10;    // percent jitter around center (50% ± 10%)
 
     // DOM elements
     let carImage, guessInput, submitButton, guessCounter, answerDisplay, fullImageDisplay;
@@ -332,7 +333,11 @@
       carImage.style.backgroundImage = `url(images/${currentPuzzle.filename})`;
       // Zoom so only a smaller portion is shown during guessing
       carImage.style.backgroundSize = `${CLUE_ZOOM_PERCENT}%`;
-      carImage.style.backgroundPosition = 'center';
+      // Randomize position but keep near center
+      const randCentered = () => 50 + (Math.random() * 2 * CLUE_POS_JITTER - CLUE_POS_JITTER);
+      const posX = randCentered().toFixed(1);
+      const posY = randCentered().toFixed(1);
+      carImage.style.backgroundPosition = `${posX}% ${posY}%`;
       
       // Update UI
       updateGuessCounter();
