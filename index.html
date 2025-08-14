@@ -215,8 +215,50 @@
     }
 
     .mode-btn {
+      position: relative;
+      /* For tooltip positioning */
       min-width: 140px;
       text-align: center;
+    }
+
+    .mode-btn .tooltip {
+      position: absolute;
+      bottom: 115%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #222;
+      border: 1px solid #444;
+      color: #fff;
+      text-align: center;
+      padding: 8px 12px;
+      border-radius: 8px;
+      z-index: 10;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease, bottom 0.2s ease;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: normal;
+      text-transform: none;
+      pointer-events: none;
+    }
+
+    .mode-btn .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #222 transparent transparent transparent;
+    }
+
+    .mode-btn:hover .tooltip {
+      opacity: 1;
+      visibility: visible;
+      bottom: 125%;
     }
 
     .guess-counter {
@@ -281,6 +323,40 @@
       margin-left: 10px;
     }
 
+    .score-display {
+      font-family: monospace;
+      font-size: 1.1em;
+      color: #aaa;
+      background: #222;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .past-guesses {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto 16px;
+      color: #ccc;
+    }
+
+    .past-guesses h3 {
+      font-size: 1em;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 8px;
+    }
+
+    .past-guess {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      font-family: monospace;
+    }
+
     footer {
       opacity: .7;
       font-size: 13px;
@@ -312,6 +388,7 @@
       <p class="sub">Guess the make and model</p>
     </header>
 
+    <div id="scoreDisplay" class="score-display"></div>
     <div class="puzzle-container">
       <div class="image-container">
         <!-- Placeholder for the zoomed-in car image -->
@@ -320,6 +397,7 @@
         </div>
       </div>
 
+      <div id="pastGuesses" class="past-guesses"></div>
       <div class="guess-container">
         <div class="suggestions">
           <input type="text" id="makeInput" placeholder="Make (e.g., Ford)" class="make-input" autocomplete="off">
@@ -329,13 +407,22 @@
           <input type="text" id="modelInput" placeholder="Model (e.g., Mustang)" class="model-input" autocomplete="off">
           <div id="modelSuggestions" class="suggestions-list" style="display:none;"></div>
         </div>
+        <div class="suggestions" id="yearInputContainer" style="display: none;">
+          <input type="number" id="yearInput" placeholder="Year (e.g., 2022)" class="year-input" autocomplete="off">
+        </div>
         <button id="submitGuess" class="btn submit-btn">Submit</button>
       </div>
     </div>
 
     <div class="mode-buttons">
-      <a href="#easy" class="btn mode-btn" id="easy">Easy Mode</a>
-      <a href="#hard" class="btn mode-btn" id="hard">Hard Mode</a>
+      <a href="#easy" class="btn mode-btn" id="easy">
+        Easy Mode
+        <span class="tooltip">No zoom, Make is pre-filled</span>
+      </a>
+      <a href="#hard" class="btn mode-btn" id="hard">
+        Hard Mode
+        <span class="tooltip">Extra zoom, year is required</span>
+      </a>
     </div>
 
     <footer>
@@ -344,274 +431,7 @@
     </footer>
   </main>
 
-  <script>
-    // Game state
-    let currentPuzzle = null;
-    let guessesRemaining = 3;
-    let hasWon = false;
-
-    // Clue display settings
-    const CLUE_ZOOM_PERCENT = 333; // ~sqrt(2)*100 -> roughly 50% of area visible
-    const CLUE_POS_JITTER = 10;    // percent jitter around center (50% ± 10%)
-
-    // DOM elements
-    let carImage, makeInput, modelInput, submitButton, guessCounter, answerDisplay, fullImageDisplay;
-
-    // Available car images with their data
-    const carImages = [
-      { filename: 'ford_mustang_gt_2022.jpg', make: 'Ford', model: 'Mustang GT', year: '2022' },
-      { filename: 'toyota_rav4_2018.jpg', make: 'Toyota', model: 'RAV4', year: '2018' },
-      { filename: 'volkswagen_golfr_2019.jpg', make: 'Volkswagen', model: 'Golf R', year: '2019' }
-    ];
-
-    // Catalog data will be loaded from catalog.json
-    let ALL_MAKES = [];
-    let MODELS_BY_MAKE = {};
-
-    // Lightweight fuzzy match: prioritize startsWith, then includes
-    function fuzzyOptions(input, list, limit = 8) {
-      const q = input.trim().toLowerCase();
-      // If there's no query, return the full list so it can be scrolled
-      if (!q) return list;
-      // Otherwise, filter and apply the limit
-      const starts = list.filter(x => x.toLowerCase().startsWith(q));
-      const contains = list.filter(x => !x.toLowerCase().startsWith(q) && x.toLowerCase().includes(q));
-      return [...starts, ...contains].slice(0, limit);
-    }
-
-    function wireAutocomplete(inputEl, listEl, optionsListOrFn, onSelect) {
-      function render(items) {
-        if (!items.length) { listEl.style.display = 'none'; listEl.innerHTML = ''; return; }
-        listEl.innerHTML = items.map(x => `<div class="suggestions-item" data-val="${x}">${x}</div>`).join('');
-        listEl.style.display = 'block';
-      }
-      function getOptions() {
-        return typeof optionsListOrFn === 'function' ? optionsListOrFn() : optionsListOrFn;
-      }
-      inputEl.addEventListener('input', () => {
-        render(fuzzyOptions(inputEl.value, getOptions()));
-      });
-      inputEl.addEventListener('focus', () => {
-        render(fuzzyOptions(inputEl.value, getOptions()));
-      });
-      inputEl.addEventListener('blur', () => {
-        setTimeout(() => { listEl.style.display = 'none'; }, 120);
-      });
-      listEl.addEventListener('click', (e) => {
-        const item = e.target.closest('.suggestions-item');
-        if (!item) return;
-        inputEl.value = item.getAttribute('data-val');
-        listEl.style.display = 'none';
-        inputEl.focus();
-        if (onSelect) onSelect(inputEl.value);
-      });
-    }
-
-    // Initialize the game
-    document.addEventListener('DOMContentLoaded', () => {
-      // Get DOM elements
-      carImage = document.getElementById('carImage');
-      makeInput = document.getElementById('makeInput');
-      modelInput = document.getElementById('modelInput');
-      submitButton = document.getElementById('submitGuess');
-
-      // Create guess counter
-      const puzzleContainer = document.querySelector('.puzzle-container');
-      guessCounter = document.createElement('div');
-      guessCounter.className = 'guess-counter';
-      puzzleContainer.insertBefore(guessCounter, document.querySelector('.guess-container'));
-
-      // Create answer display (initially hidden)
-      answerDisplay = document.createElement('div');
-      answerDisplay.className = 'answer-display';
-      answerDisplay.style.display = 'none';
-      puzzleContainer.appendChild(answerDisplay);
-
-      // Create full image display (initially hidden)
-      fullImageDisplay = document.createElement('div');
-      fullImageDisplay.className = 'full-image-display';
-      fullImageDisplay.style.display = 'none';
-      puzzleContainer.insertBefore(fullImageDisplay, answerDisplay);
-
-      // Load the full catalog from JSON and wire up the UI
-      fetch('catalog.json')
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Failed to load catalog.json. Please run from a web server.');
-          }
-          return response.json();
-        })
-        .then(data => {
-          ALL_MAKES = data.makes;
-          MODELS_BY_MAKE = data.modelsByMake;
-          console.log('Car catalog loaded successfully.');
-          // Once data is loaded, wire up autocomplete
-          const makeListEl = document.getElementById('makeSuggestions');
-          const modelListEl = document.getElementById('modelSuggestions');
-
-          // When selecting a make, clear the model and update its suggestion set
-          wireAutocomplete(makeInput, makeListEl, ALL_MAKES, () => {
-            modelInput.value = '';
-            // Immediately refresh model suggestions based on new make
-            const opts = getModelOptions();
-            modelListEl.style.display = 'none';
-            modelListEl.innerHTML = '';
-            if (document.activeElement === modelInput) {
-              // defer to modelInput focus/input listeners
-            }
-          });
-
-          function getModelOptions() {
-            const selMake = makeInput.value.trim();
-            if (MODELS_BY_MAKE[selMake] && MODELS_BY_MAKE[selMake].length) return MODELS_BY_MAKE[selMake];
-            // Fallback to all known models (flattened)
-            return Object.values(MODELS_BY_MAKE).flat();
-          }
-          wireAutocomplete(modelInput, modelListEl, () => getModelOptions());
-
-          // Start a new game
-          newGame();
-
-          // Event listeners
-          submitButton.addEventListener('click', checkGuess);
-          [makeInput, modelInput].forEach(inp => inp.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') checkGuess();
-          }));
-
-          // Mode buttons
-          ['easy', 'hard'].forEach(id => {
-            const link = document.getElementById(id);
-            link.addEventListener('click', (e) => {
-              e.preventDefault();
-              toast(`${id.charAt(0).toUpperCase() + id.slice(1)} mode coming soon`);
-            });
-          });
-        })
-        .catch(error => {
-          console.error('Failed to load car catalog:', error);
-          // Display an error to the user
-          document.getElementById('game-container').innerHTML =
-            '<p style="color: red; font-weight: bold;">Error: Could not load car catalog. Please ensure you are running this from a local web server, not a file:// URL.</p>';
-        });
-    });
-
-    // Start a new game
-    function newGame() {
-      // Reset game state
-      guessesRemaining = 3;
-      hasWon = false;
-      makeInput.value = '';
-      modelInput.value = '';
-      makeInput.disabled = false;
-      modelInput.disabled = false;
-      submitButton.disabled = false;
-      answerDisplay.style.display = 'none';
-      fullImageDisplay.style.display = 'none';
-
-      // Select a random car
-      currentPuzzle = carImages[Math.floor(Math.random() * carImages.length)];
-
-      // Set the zoomed-in image
-      carImage.style.backgroundImage = `url(images/${currentPuzzle.filename})`;
-      // Zoom so only a smaller portion is shown during guessing
-      carImage.style.backgroundSize = `${CLUE_ZOOM_PERCENT}%`;
-      // Randomize position but keep near center
-      const randCentered = () => 50 + (Math.random() * 2 * CLUE_POS_JITTER - CLUE_POS_JITTER);
-      const posX = randCentered().toFixed(1);
-      const posY = randCentered().toFixed(1);
-      carImage.style.backgroundPosition = `${posX}% ${posY}%`;
-
-      // Update UI
-      updateGuessCounter();
-    }
-
-    // Check the user's guess
-    function checkGuess() {
-      if (hasWon) return;
-
-      const makeGuess = makeInput.value.trim().toLowerCase();
-      const modelGuess = modelInput.value.trim().toLowerCase();
-      if (!makeGuess || !modelGuess) return;
-
-      const correctMake = currentPuzzle.make.toLowerCase();
-      const correctModel = currentPuzzle.model.toLowerCase();
-
-      if (makeGuess === correctMake && modelGuess === correctModel) {
-        // Correct guess
-        hasWon = true;
-        showAnswer(true);
-        toast('Correct! 🎉');
-      } else {
-        // Incorrect guess
-        guessesRemaining--;
-        updateGuessCounter();
-
-        if (guessesRemaining <= 0) {
-          // Out of guesses
-          showAnswer(false);
-          toast('Out of guesses! The answer was revealed.');
-        } else {
-          toast(`Incorrect! ${guessesRemaining} ${guessesRemaining === 1 ? 'guess' : 'guesses'} remaining.`);
-        }
-      }
-
-      // Keep what user typed; do not clear fields automatically
-    }
-
-    // Update the guess counter display
-    function updateGuessCounter() {
-      guessCounter.textContent = `Guesses remaining: ${guessesRemaining}`;
-    }
-
-    // Show the answer and full image
-    function showAnswer(isCorrect) {
-      makeInput.disabled = true;
-      modelInput.disabled = true;
-      submitButton.disabled = true;
-
-      // Show full image
-      fullImageDisplay.innerHTML = `
-        <h3>Full Image</h3>
-        <img src="images/${currentPuzzle.filename}" alt="${currentPuzzle.make} ${currentPuzzle.model}">
-      `;
-      fullImageDisplay.style.display = 'block';
-
-      // Show answer
-      answerDisplay.innerHTML = `
-        <h3>${isCorrect ? 'Correct!' : 'The answer was:'}</h3>
-        <p>${currentPuzzle.make.toUpperCase()} ${currentPuzzle.model.toUpperCase()} (${currentPuzzle.year})</p>
-        <button id="playAgain" class="btn">Play Again</button>
-      `;
-      answerDisplay.style.display = 'block';
-
-      // Add event listener for play again button
-      document.getElementById('playAgain').addEventListener('click', newGame);
-    }
-
-    function toast(msg) {
-      const el = document.createElement('div');
-      el.textContent = msg;
-      el.style.position = 'fixed';
-      el.style.left = '50%';
-      el.style.bottom = '28px';
-      el.style.transform = 'translateX(-50%)';
-      el.style.padding = '12px 24px';
-      el.style.border = '2px solid #fff';
-      el.style.borderRadius = '12px';
-      el.style.background = 'rgba(0,0,0,0.8)';
-      el.style.color = '#fff';
-      el.style.fontWeight = '700';
-      el.style.letterSpacing = '.06em';
-      el.style.zIndex = '9999';
-      el.style.boxShadow = '0 0 0 6px rgba(255,255,255,0.04)';
-      el.style.whiteSpace = 'nowrap';
-      document.body.appendChild(el);
-      setTimeout(() => { el.remove(); }, 1700);
-    }
-
-    // Dynamic year
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
+  <script src="game.js"></script>
 </body>
 
 </html>
