@@ -111,14 +111,16 @@
     }
     
     .guess-container {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
       gap: 12px;
       width: 100%;
-      max-width: 500px;
+      max-width: 600px;
       margin: 0 auto;
+      align-items: start;
     }
     
-    .guess-input {
+    .guess-input, .make-input, .model-input {
       flex: 1;
       padding: 16px 20px;
       border: 2px solid #333;
@@ -129,9 +131,34 @@
       transition: border-color 0.2s;
     }
     
-    .guess-input:focus {
+    .guess-input:focus, .make-input:focus, .model-input:focus {
       outline: none;
       border-color: var(--accent);
+    }
+
+    .suggestions {
+      position: relative;
+    }
+    .suggestions-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #0f0f0f;
+      border: 2px solid #333;
+      border-radius: 12px;
+      margin-top: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 20;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .suggestions-item {
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+    .suggestions-item:hover {
+      background: rgba(255,255,255,0.06);
     }
     
     .submit-btn {
@@ -236,7 +263,14 @@
       </div>
       
       <div class="guess-container">
-        <input type="text" id="guessInput" placeholder="Enter make and model..." class="guess-input" autocomplete="off">
+        <div class="suggestions">
+          <input type="text" id="makeInput" placeholder="Make (e.g., Ford)" class="make-input" autocomplete="off">
+          <div id="makeSuggestions" class="suggestions-list" style="display:none;"></div>
+        </div>
+        <div class="suggestions">
+          <input type="text" id="modelInput" placeholder="Model (e.g., Mustang)" class="model-input" autocomplete="off">
+          <div id="modelSuggestions" class="suggestions-list" style="display:none;"></div>
+        </div>
         <button id="submitGuess" class="btn submit-btn">Submit</button>
       </div>
     </div>
@@ -262,7 +296,7 @@
     const CLUE_POS_JITTER = 10;    // percent jitter around center (50% ± 10%)
 
     // DOM elements
-    let carImage, guessInput, submitButton, guessCounter, answerDisplay, fullImageDisplay;
+    let carImage, makeInput, modelInput, submitButton, guessCounter, answerDisplay, fullImageDisplay;
 
     // Available car images with their data
     const carImages = [
@@ -271,11 +305,49 @@
       { filename: 'volkswagen_golfr_2019.jpg', make: 'Volkswagen', model: 'Golf R', year: '2019' }
     ];
 
+    // Simple option lists for fuzzy suggestions (from current dataset)
+    const MAKES = [...new Set(carImages.map(c => c.make))].sort();
+    const MODELS = [...new Set(carImages.map(c => c.model))].sort();
+
+    // Lightweight fuzzy match: prioritize startsWith, then includes
+    function fuzzyOptions(input, list, limit = 8) {
+      const q = input.trim().toLowerCase();
+      if (!q) return list.slice(0, limit);
+      const starts = list.filter(x => x.toLowerCase().startsWith(q));
+      const contains = list.filter(x => !x.toLowerCase().startsWith(q) && x.toLowerCase().includes(q));
+      return [...starts, ...contains].slice(0, limit);
+    }
+
+    function wireAutocomplete(inputEl, listEl, optionsList) {
+      function render(items) {
+        if (!items.length) { listEl.style.display = 'none'; listEl.innerHTML = ''; return; }
+        listEl.innerHTML = items.map(x => `<div class="suggestions-item" data-val="${x}">${x}</div>`).join('');
+        listEl.style.display = 'block';
+      }
+      inputEl.addEventListener('input', () => {
+        render(fuzzyOptions(inputEl.value, optionsList));
+      });
+      inputEl.addEventListener('focus', () => {
+        render(fuzzyOptions(inputEl.value, optionsList));
+      });
+      inputEl.addEventListener('blur', () => {
+        setTimeout(() => { listEl.style.display = 'none'; }, 120);
+      });
+      listEl.addEventListener('click', (e) => {
+        const item = e.target.closest('.suggestions-item');
+        if (!item) return;
+        inputEl.value = item.getAttribute('data-val');
+        listEl.style.display = 'none';
+        inputEl.focus();
+      });
+    }
+
     // Initialize the game
     document.addEventListener('DOMContentLoaded', () => {
       // Get DOM elements
       carImage = document.getElementById('carImage');
-      guessInput = document.getElementById('guessInput');
+      makeInput = document.getElementById('makeInput');
+      modelInput = document.getElementById('modelInput');
       submitButton = document.getElementById('submitGuess');
       
       // Create guess counter
@@ -301,9 +373,13 @@
 
       // Event listeners
       submitButton.addEventListener('click', checkGuess);
-      guessInput.addEventListener('keypress', (e) => {
+      [makeInput, modelInput].forEach(inp => inp.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') checkGuess();
-      });
+      }));
+
+      // Wire up autocomplete
+      wireAutocomplete(makeInput, document.getElementById('makeSuggestions'), MAKES);
+      wireAutocomplete(modelInput, document.getElementById('modelSuggestions'), MODELS);
       
       // Mode buttons
       ['easy', 'hard'].forEach(id => {
@@ -320,8 +396,10 @@
       // Reset game state
       guessesRemaining = 3;
       hasWon = false;
-      guessInput.value = '';
-      guessInput.disabled = false;
+      makeInput.value = '';
+      modelInput.value = '';
+      makeInput.disabled = false;
+      modelInput.disabled = false;
       submitButton.disabled = false;
       answerDisplay.style.display = 'none';
       fullImageDisplay.style.display = 'none';
@@ -347,12 +425,14 @@
     function checkGuess() {
       if (hasWon) return;
       
-      const guess = guessInput.value.trim().toLowerCase();
-      if (!guess) return;
+      const makeGuess = makeInput.value.trim().toLowerCase();
+      const modelGuess = modelInput.value.trim().toLowerCase();
+      if (!makeGuess || !modelGuess) return;
       
-      const correctAnswer = `${currentPuzzle.make} ${currentPuzzle.model}`.toLowerCase();
+      const correctMake = currentPuzzle.make.toLowerCase();
+      const correctModel = currentPuzzle.model.toLowerCase();
       
-      if (guess === correctAnswer) {
+      if (makeGuess === correctMake && modelGuess === correctModel) {
         // Correct guess
         hasWon = true;
         showAnswer(true);
@@ -371,7 +451,7 @@
         }
       }
       
-      guessInput.value = '';
+      // Keep what user typed; do not clear fields automatically
     }
     
     // Update the guess counter display
@@ -381,7 +461,8 @@
     
     // Show the answer and full image
     function showAnswer(isCorrect) {
-      guessInput.disabled = true;
+      makeInput.disabled = true;
+      modelInput.disabled = true;
       submitButton.disabled = true;
       
       // Show full image
