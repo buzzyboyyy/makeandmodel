@@ -292,7 +292,7 @@
     let hasWon = false;
 
     // Clue display settings
-    const CLUE_ZOOM_PERCENT = 141; // ~sqrt(2)*100 -> roughly 50% of area visible
+    const CLUE_ZOOM_PERCENT = 200; // ~sqrt(2)*100 -> roughly 50% of area visible
     const CLUE_POS_JITTER = 10;    // percent jitter around center (50% ± 10%)
 
     // DOM elements
@@ -305,9 +305,9 @@
       { filename: 'volkswagen_golfr_2019.jpg', make: 'Volkswagen', model: 'Golf R', year: '2019' }
     ];
 
-    // Simple option lists for fuzzy suggestions (from current dataset)
-    const MAKES = [...new Set(carImages.map(c => c.make))].sort();
-    const MODELS = [...new Set(carImages.map(c => c.model))].sort();
+    // Catalog data will be loaded from catalog.json
+    let ALL_MAKES = [];
+    let MODELS_BY_MAKE = {};
 
     // Lightweight fuzzy match: prioritize startsWith, then includes
     function fuzzyOptions(input, list, limit = 8) {
@@ -318,17 +318,20 @@
       return [...starts, ...contains].slice(0, limit);
     }
 
-    function wireAutocomplete(inputEl, listEl, optionsList) {
+    function wireAutocomplete(inputEl, listEl, optionsListOrFn, onSelect) {
       function render(items) {
         if (!items.length) { listEl.style.display = 'none'; listEl.innerHTML = ''; return; }
         listEl.innerHTML = items.map(x => `<div class="suggestions-item" data-val="${x}">${x}</div>`).join('');
         listEl.style.display = 'block';
       }
+      function getOptions() {
+        return typeof optionsListOrFn === 'function' ? optionsListOrFn() : optionsListOrFn;
+      }
       inputEl.addEventListener('input', () => {
-        render(fuzzyOptions(inputEl.value, optionsList));
+        render(fuzzyOptions(inputEl.value, getOptions()));
       });
       inputEl.addEventListener('focus', () => {
-        render(fuzzyOptions(inputEl.value, optionsList));
+        render(fuzzyOptions(inputEl.value, getOptions()));
       });
       inputEl.addEventListener('blur', () => {
         setTimeout(() => { listEl.style.display = 'none'; }, 120);
@@ -339,6 +342,7 @@
         inputEl.value = item.getAttribute('data-val');
         listEl.style.display = 'none';
         inputEl.focus();
+        if (onSelect) onSelect(inputEl.value);
       });
     }
 
@@ -368,27 +372,66 @@
       fullImageDisplay.style.display = 'none';
       puzzleContainer.insertBefore(fullImageDisplay, answerDisplay);
 
-      // Start a new game
-      newGame();
+      // Load the full catalog from JSON and wire up the UI
+      fetch('catalog.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to load catalog.json. Please run from a web server.');
+          }
+          return response.json();
+        })
+        .then(data => {
+          ALL_MAKES = data.makes;
+          MODELS_BY_MAKE = data.modelsByMake;
+          console.log('Car catalog loaded successfully.');
+          // Once data is loaded, wire up autocomplete
+          const makeListEl = document.getElementById('makeSuggestions');
+          const modelListEl = document.getElementById('modelSuggestions');
 
-      // Event listeners
-      submitButton.addEventListener('click', checkGuess);
-      [makeInput, modelInput].forEach(inp => inp.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkGuess();
-      }));
+          // When selecting a make, clear the model and update its suggestion set
+          wireAutocomplete(makeInput, makeListEl, ALL_MAKES, () => {
+            modelInput.value = '';
+            // Immediately refresh model suggestions based on new make
+            const opts = getModelOptions();
+            modelListEl.style.display = 'none';
+            modelListEl.innerHTML = '';
+            if (document.activeElement === modelInput) {
+              // defer to modelInput focus/input listeners
+            }
+          });
 
-      // Wire up autocomplete
-      wireAutocomplete(makeInput, document.getElementById('makeSuggestions'), MAKES);
-      wireAutocomplete(modelInput, document.getElementById('modelSuggestions'), MODELS);
-      
-      // Mode buttons
-      ['easy', 'hard'].forEach(id => {
-        const link = document.getElementById(id);
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          toast(`${id.charAt(0).toUpperCase() + id.slice(1)} mode coming soon`);
+          function getModelOptions() {
+            const selMake = makeInput.value.trim();
+            if (MODELS_BY_MAKE[selMake] && MODELS_BY_MAKE[selMake].length) return MODELS_BY_MAKE[selMake];
+            // Fallback to all known models (flattened)
+            return Object.values(MODELS_BY_MAKE).flat();
+          }
+          wireAutocomplete(modelInput, modelListEl, () => getModelOptions());
+
+          // Start a new game
+          newGame();
+
+          // Event listeners
+          submitButton.addEventListener('click', checkGuess);
+          [makeInput, modelInput].forEach(inp => inp.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkGuess();
+          }));
+
+          // Mode buttons
+          ['easy', 'hard'].forEach(id => {
+            const link = document.getElementById(id);
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              toast(`${id.charAt(0).toUpperCase() + id.slice(1)} mode coming soon`);
+            });
+          });
+        })
+        .catch(error => {
+          console.error('Failed to load car catalog:', error);
+          // Display an error to the user
+          document.getElementById('game-container').innerHTML = 
+            '<p style="color: red; font-weight: bold;">Error: Could not load car catalog. Please ensure you are running this from a local web server, not a file:// URL.</p>';
         });
-      });
     });
 
     // Start a new game
