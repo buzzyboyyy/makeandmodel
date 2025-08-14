@@ -257,6 +257,9 @@
     let guessesRemaining = 3;
     let hasWon = false;
 
+    // Clue display settings
+    const CLUE_ZOOM_PERCENT = 141; // ~sqrt(2)*100 -> roughly 50% of area visible
+
     // DOM elements
     let carImage, guessInput, submitButton, guessCounter, answerDisplay, fullImageDisplay;
 
@@ -327,6 +330,9 @@
       
       // Set the zoomed-in image
       carImage.style.backgroundImage = `url(images/${currentPuzzle.filename})`;
+      // Zoom so only a smaller portion is shown during guessing
+      carImage.style.backgroundSize = `${CLUE_ZOOM_PERCENT}%`;
+      carImage.style.backgroundPosition = 'center';
       
       // Update UI
       updateGuessCounter();
