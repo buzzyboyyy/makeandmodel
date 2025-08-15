@@ -11,7 +11,7 @@ let sessionResults = [];
 // Game mode settings
 const GAME_MODES = {
     daily: { zoom: 333, guesses: 3, requireYear: false },
-    easy: { zoom: 100, guesses: 5, requireYear: false }, // No zoom
+    easy: { zoom: 100, guesses: 3, requireYear: false }, // No zoom
     hard: { zoom: 400, guesses: 1, requireYear: false }, // Extra zoom, year requirement disabled for now
 };
 
@@ -220,7 +220,7 @@ function newGame() {
     } else {
         puzzleNumber++;
     }
-    
+
     guessesRemaining = GAME_MODES[gameMode].guesses;
     hasWon = false;
     guesses = [];
@@ -333,13 +333,10 @@ function renderScoreTracker() {
             box.className = 'score-box';
             if (i < sessionResults.length) {
                 box.textContent = sessionResults[i] ? '✅' : '❌';
-                box.style.fontSize = '48px'; // 100% larger emojis
             } else if (i === sessionResults.length && i < puzzleNumber) {
                 box.textContent = '❓';
-                box.style.fontSize = '48px'; // 100% larger emojis
             } else {
                 box.textContent = '⬛';
-                box.style.fontSize = '48px'; // 100% larger emojis
             }
             tracker.appendChild(box);
         }
@@ -362,7 +359,7 @@ function showAnswer(isCorrect) {
     if (sessionResults.length < puzzleNumber) {
         sessionResults.push(isCorrect);
     }
-    
+
     // Update score display immediately
     renderScoreTracker();
 
@@ -384,7 +381,7 @@ function showAnswer(isCorrect) {
         nextButton.classList.add('visible');
         nextButton.textContent = isSessionOver ? 'New Session' : 'Next';
     }
-    
+
     answerDisplay.style.display = 'block';
 
     // Add event listener for play again button if it exists
@@ -454,12 +451,10 @@ function restoreUI() {
     updateGuessCounter();
     renderScoreTracker();
 
-    // Display past guesses
+    // Hide the past guesses section
     const pastGuessesEl = document.getElementById('pastGuesses');
-    pastGuessesEl.innerHTML = '';
-    if (guesses && guesses.length > 0) {
-        pastGuessesEl.innerHTML = '<h3>Your Guesses:</h3>' +
-            guesses.map(g => `<div class="past-guess">${g.make} - ${g.model} ${g.year ? '(' + g.year + ')' : ''}</div>`).join('');
+    if (pastGuessesEl) {
+        pastGuessesEl.style.display = 'none';
     }
 
     if (hasWon || guessesRemaining <= 0) {

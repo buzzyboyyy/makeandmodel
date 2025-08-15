@@ -7,7 +7,8 @@
   <title>makeandmodel</title>
   <meta name="description"
     content="Daily car make and model guessing game. Can you identify the car from a zoomed-in image?" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>" />
   <style>
     :root {
       --bg: #000;
@@ -118,9 +119,13 @@
 
     /* Puzzle container styles */
     .puzzle-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
       width: 100%;
       max-width: 600px;
-      text-align: center;
+      margin: 0 auto;
       margin: 20px 0;
     }
 
@@ -270,10 +275,14 @@
     }
 
     .answer-display {
-      margin-top: 24px;
-      padding: 16px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
+      order: -1;
+      margin: 0 0 20px 0;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 8px;
+      color: white;
+      width: 100%;
+      max-width: 600px;
       text-align: center;
     }
 
@@ -335,9 +344,10 @@
     }
 
     .score-box {
-      width: 36px;
-      height: 36px;
-      font-size: 24px;
+      width: 48px;
+      height: 48px;
+      font-size: 36px;
+      margin: 0 4px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -349,9 +359,7 @@
     }
 
     .next-button {
-      position: absolute;
-      top: 20px;
-      right: 20px;
+      margin-left: 24px;
       padding: 12px 24px;
       font-size: 16px;
       font-weight: 700;
@@ -361,7 +369,7 @@
       border-radius: 12px;
       cursor: pointer;
       transition: all 0.2s ease;
-      z-index: 10;
+      align-self: center;
       opacity: 0;
       visibility: hidden;
       transform: translateY(10px);
@@ -371,6 +379,19 @@
       opacity: 1;
       visibility: visible;
       transform: translateY(0);
+    }
+
+    .puzzle-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      gap: 20px;
+    }
+
+    .image-container {
+      flex: 1;
+      max-width: 600px;
     }
 
     .next-button:hover {
@@ -437,12 +458,15 @@
       <div id="scoreTracker" class="score-tracker"></div>
     </div>
     <div class="puzzle-container">
-      <div class="image-container">
-        <!-- Placeholder for the zoomed-in car image -->
-        <div class="car-image" id="carImage">
-          <!-- Image will be set via JavaScript -->
-          <button id="nextButton" class="next-button">Next</button>
+      <div id="answerDisplay" class="answer-display" style="display: none;"></div>
+      <div class="puzzle-row">
+        <div class="image-container">
+          <!-- Placeholder for the zoomed-in car image -->
+          <div class="car-image" id="carImage">
+            <!-- Image will be set via JavaScript -->
+          </div>
         </div>
+        <button id="nextButton" class="next-button">Next</button>
       </div>
 
       <div id="pastGuesses" class="past-guesses"></div>
