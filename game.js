@@ -184,11 +184,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 });
 
-// Start a new game series for a given mode
+// Update the header based on the current game mode
+function updateHeader() {
+    const header = document.querySelector('header h1');
+    const subheader = document.querySelector('header .sub');
+
+    if (!header || !subheader) return; // Skip if elements not found
+
+    if (gameMode === 'daily') {
+        header.textContent = 'Daily Puzzle';
+        subheader.textContent = 'Guess the make and model';
+    } else if (gameMode === 'easy') {
+        header.textContent = 'Easy Mode';
+        subheader.textContent = 'Make is shown, guess the model';
+    } else if (gameMode === 'hard') {
+        header.textContent = 'Hard Mode';
+        subheader.textContent = 'Guess the make, model, and year';
+    }
+}
+
+// Set initial header when the page loads
+document.addEventListener('DOMContentLoaded', updateHeader);
+
 function startGame(mode) {
     gameMode = mode;
     puzzleNumber = 0;
     sessionResults = [];
+    updateHeader();
 
     if (mode === 'daily') {
         const loadedState = loadDailyState();
