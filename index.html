@@ -4,9 +4,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>makeandmodel.xyz — Daily Puzzle</title>
+  <title>makeandmodel</title>
   <meta name="description"
     content="Daily car make and model guessing game. Can you identify the car from a zoomed-in image?" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>" />
   <style>
     :root {
       --bg: #000;
@@ -326,42 +327,56 @@
 
     .score-tracker {
       display: flex;
-      gap: 8px;
+      gap: 12px;
       justify-content: center;
-      margin-bottom: 16px;
+      margin: 0 auto 24px;
+      flex-wrap: wrap;
+      max-width: 90%;
     }
 
     .score-box {
-      width: 30px;
-      height: 30px;
+      width: 36px;
+      height: 36px;
       font-size: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #222;
-      border-radius: 6px;
+      border-radius: 8px;
       color: #aaa;
       line-height: 1;
+      flex-shrink: 0;
     }
 
     .next-button {
-      margin-left: 16px;
-      padding: 0 16px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #333;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 700;
+      background: #000;
       color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
+      border: 2px solid #fff;
+      border-radius: 12px;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: all 0.2s ease;
+      z-index: 10;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+    }
+
+    .next-button.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
     }
 
     .next-button:hover {
-      background: #444;
+      background: #333;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
     .past-guesses {
@@ -411,7 +426,7 @@
 </head>
 
 <body>
-  <div class="brand">DAILY PUZZLE</div>
+  <div class="brand">makeandmodel.xyz</div>
   <main class="wrap">
     <header>
       <h1>What's this car?</h1>
@@ -420,13 +435,13 @@
 
     <div class="score-container">
       <div id="scoreTracker" class="score-tracker"></div>
-      <button id="nextButton" class="next-button" style="display: none;">Next</button>
     </div>
     <div class="puzzle-container">
       <div class="image-container">
         <!-- Placeholder for the zoomed-in car image -->
         <div class="car-image" id="carImage">
           <!-- Image will be set via JavaScript -->
+          <button id="nextButton" class="next-button">Next</button>
         </div>
       </div>
 

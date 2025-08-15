@@ -106,7 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Get Next button
     nextButton = document.getElementById('nextButton');
-    nextButton.addEventListener('click', () => {
+    nextButton.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent event from bubbling to car image
         if (puzzleNumber >= SESSION_SIZE) {
             startGame(gameMode); // Start a new session
         } else {
@@ -213,7 +214,13 @@ function startGame(mode) {
 // Start a new puzzle
 function newGame() {
     // Reset puzzle state
-    puzzleNumber++;
+    if (puzzleNumber >= SESSION_SIZE) {
+        puzzleNumber = 0;
+        sessionResults = [];
+    } else {
+        puzzleNumber++;
+    }
+    
     guessesRemaining = GAME_MODES[gameMode].guesses;
     hasWon = false;
     guesses = [];
@@ -225,6 +232,7 @@ function newGame() {
     submitButton.disabled = false;
     answerDisplay.style.display = 'none';
     fullImageDisplay.style.display = 'none';
+    nextButton.classList.remove('visible');
 
     // Select a puzzle
     if (gameMode === 'daily') {
@@ -325,8 +333,13 @@ function renderScoreTracker() {
             box.className = 'score-box';
             if (i < sessionResults.length) {
                 box.textContent = sessionResults[i] ? '✅' : '❌';
+                box.style.fontSize = '48px'; // 100% larger emojis
+            } else if (i === sessionResults.length && i < puzzleNumber) {
+                box.textContent = '❓';
+                box.style.fontSize = '48px'; // 100% larger emojis
             } else {
                 box.textContent = '⬛';
+                box.style.fontSize = '48px'; // 100% larger emojis
             }
             tracker.appendChild(box);
         }
@@ -345,7 +358,12 @@ function showAnswer(isCorrect) {
     carImage.style.backgroundSize = '100%';
     carImage.style.backgroundPosition = 'center';
 
-    sessionResults.push(isCorrect);
+    // Only add to session results if not already added for this puzzle
+    if (sessionResults.length < puzzleNumber) {
+        sessionResults.push(isCorrect);
+    }
+    
+    // Update score display immediately
     renderScoreTracker();
 
     const isSessionOver = puzzleNumber >= SESSION_SIZE && gameMode !== 'daily';
@@ -361,27 +379,31 @@ function showAnswer(isCorrect) {
         }
     `;
 
-    // Show Next button for Easy/Hard modes
-    if (gameMode !== 'daily') {
-        nextButton.style.display = 'flex';
+    // Show Next button for Easy/Hard modes after all guesses are used
+    if (gameMode !== 'daily' && (hasWon || guessesRemaining <= 0)) {
+        nextButton.classList.add('visible');
         nextButton.textContent = isSessionOver ? 'New Session' : 'Next';
     }
+    
     answerDisplay.style.display = 'block';
 
-    // Add event listener for play again button
-    document.getElementById('playAgain').addEventListener('click', () => {
-        if (gameMode === 'daily') {
-            toast('Daily puzzle is once a day. Play another mode!');
-            document.getElementById('playAgain').disabled = true;
-            return;
-        }
+    // Add event listener for play again button if it exists
+    const playAgainBtn = document.getElementById('playAgain');
+    if (playAgainBtn) {
+        playAgainBtn.addEventListener('click', () => {
+            if (gameMode === 'daily') {
+                toast('Daily puzzle is once a day. Play another mode!');
+                playAgainBtn.disabled = true;
+                return;
+            }
 
-        if (puzzleNumber >= SESSION_SIZE) {
-            startGame(gameMode); // Start a new session
-        } else {
-            newGame(); // Start next puzzle in the session
-        }
-    });
+            if (puzzleNumber >= SESSION_SIZE) {
+                startGame(gameMode); // Start a new session
+            } else {
+                newGame(); // Start next puzzle in the session
+            }
+        });
+    }
 }
 
 function toast(msg) {
