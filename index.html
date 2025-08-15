@@ -344,6 +344,26 @@
       line-height: 1;
     }
 
+    .next-button {
+      margin-left: 16px;
+      padding: 0 16px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .next-button:hover {
+      background: #444;
+    }
+
     .past-guesses {
       width: 100%;
       max-width: 400px;
@@ -398,7 +418,10 @@
       <p class="sub">Guess the make and model</p>
     </header>
 
-    <div id="scoreTracker" class="score-tracker"></div>
+    <div class="score-container">
+      <div id="scoreTracker" class="score-tracker"></div>
+      <button id="nextButton" class="next-button" style="display: none;">Next</button>
+    </div>
     <div class="puzzle-container">
       <div class="image-container">
         <!-- Placeholder for the zoomed-in car image -->

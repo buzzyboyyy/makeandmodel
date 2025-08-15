@@ -12,14 +12,14 @@ let sessionResults = [];
 const GAME_MODES = {
     daily: { zoom: 333, guesses: 3, requireYear: false },
     easy: { zoom: 100, guesses: 5, requireYear: false }, // No zoom
-    hard: { zoom: 400, guesses: 3, requireYear: true }, // Extra zoom
+    hard: { zoom: 400, guesses: 1, requireYear: false }, // Extra zoom, year requirement disabled for now
 };
 
 // Clue display settings
-const CLUE_POS_JITTER = 10; // percent jitter around center (50% ± 10%)
+const CLUE_POS_JITTER = 15; // percent jitter around center (50% ± 10%)
 
 // DOM elements
-let carImage, makeInput, modelInput, yearInput, yearInputContainer, submitButton, guessCounter, answerDisplay, fullImageDisplay;
+let carImage, makeInput, modelInput, yearInput, yearInputContainer, submitButton, guessCounter, answerDisplay, nextButton;
 
 // Available car images with their data
 const carImages = [
@@ -103,6 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
     answerDisplay.className = 'answer-display';
     answerDisplay.style.display = 'none';
     puzzleContainer.appendChild(answerDisplay);
+
+    // Get Next button
+    nextButton = document.getElementById('nextButton');
+    nextButton.addEventListener('click', () => {
+        if (puzzleNumber >= SESSION_SIZE) {
+            startGame(gameMode); // Start a new session
+        } else {
+            newGame(); // Start next puzzle in the session
+        }
+    });
 
     // Create full image display (initially hidden)
     fullImageDisplay = document.createElement('div');
@@ -305,16 +315,23 @@ function updateGuessCounter() {
 function renderScoreTracker() {
     const tracker = document.getElementById('scoreTracker');
     if (!tracker) return;
-    tracker.innerHTML = '';
-    for (let i = 0; i < SESSION_SIZE; i++) {
-        const box = document.createElement('div');
-        box.className = 'score-box';
-        if (i < sessionResults.length) {
-            box.textContent = sessionResults[i] ? '✅' : '❌';
-        } else {
-            box.textContent = '⬛';
+    
+    // Only show tracker for Easy and Hard modes
+    if (gameMode === 'easy' || gameMode === 'hard') {
+        tracker.style.display = 'flex';
+        tracker.innerHTML = '';
+        for (let i = 0; i < SESSION_SIZE; i++) {
+            const box = document.createElement('div');
+            box.className = 'score-box';
+            if (i < sessionResults.length) {
+                box.textContent = sessionResults[i] ? '✅' : '❌';
+            } else {
+                box.textContent = '⬛';
+            }
+            tracker.appendChild(box);
         }
-        tracker.appendChild(box);
+    } else {
+        tracker.style.display = 'none';
     }
 }
 
@@ -324,24 +341,31 @@ function showAnswer(isCorrect) {
     modelInput.disabled = true;
     submitButton.disabled = true;
 
-    // Show full image
-    fullImageDisplay.innerHTML = `
-    <h3>Full Image</h3>
-    <img src="images/${currentPuzzle.filename}" alt="${currentPuzzle.make} ${currentPuzzle.model}">
-  `;
-    fullImageDisplay.style.display = 'block';
+    // Unzoom the image for all modes
+    carImage.style.backgroundSize = '100%';
+    carImage.style.backgroundPosition = 'center';
 
     sessionResults.push(isCorrect);
     renderScoreTracker();
 
     const isSessionOver = puzzleNumber >= SESSION_SIZE && gameMode !== 'daily';
+    const showFullImage = gameMode === 'hard';
 
     // Show answer
     answerDisplay.innerHTML = `
-    <h3>${isCorrect ? 'Correct!' : 'The answer was:'}</h3>
-    <p>${currentPuzzle.make.toUpperCase()} ${currentPuzzle.model.toUpperCase()} (${currentPuzzle.year})</p>
-    <button id="playAgain" class="btn">${isSessionOver ? 'New Session' : 'Play Again'}</button>
-  `;
+      <h3>${isCorrect ? 'Correct!' : 'The answer was:'}</h3>
+      <p>${currentPuzzle.make.toUpperCase()} ${currentPuzzle.model.toUpperCase()} (${currentPuzzle.year})</p>
+      ${gameMode === 'daily' ? 
+        '<button id="playAgain" class="btn">Play Again</button>' : 
+        ''
+      }
+    `;
+
+    // Show Next button for Easy/Hard modes
+    if (gameMode !== 'daily') {
+      nextButton.style.display = 'flex';
+      nextButton.textContent = isSessionOver ? 'New Session' : 'Next';
+    }
     answerDisplay.style.display = 'block';
 
     // Add event listener for play again button
