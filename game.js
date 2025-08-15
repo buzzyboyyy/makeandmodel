@@ -315,7 +315,7 @@ function updateGuessCounter() {
 function renderScoreTracker() {
     const tracker = document.getElementById('scoreTracker');
     if (!tracker) return;
-    
+
     // Only show tracker for Easy and Hard modes
     if (gameMode === 'easy' || gameMode === 'hard') {
         tracker.style.display = 'flex';
@@ -355,16 +355,16 @@ function showAnswer(isCorrect) {
     answerDisplay.innerHTML = `
       <h3>${isCorrect ? 'Correct!' : 'The answer was:'}</h3>
       <p>${currentPuzzle.make.toUpperCase()} ${currentPuzzle.model.toUpperCase()} (${currentPuzzle.year})</p>
-      ${gameMode === 'daily' ? 
-        '<button id="playAgain" class="btn">Play Again</button>' : 
-        ''
-      }
+      ${gameMode === 'daily' ?
+            '<button id="playAgain" class="btn">Play Again</button>' :
+            ''
+        }
     `;
 
     // Show Next button for Easy/Hard modes
     if (gameMode !== 'daily') {
-      nextButton.style.display = 'flex';
-      nextButton.textContent = isSessionOver ? 'New Session' : 'Next';
+        nextButton.style.display = 'flex';
+        nextButton.textContent = isSessionOver ? 'New Session' : 'Next';
     }
     answerDisplay.style.display = 'block';
 
